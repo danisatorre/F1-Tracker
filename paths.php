@@ -32,7 +32,7 @@
     define('JS_PATH', SITE_ROOT . 'public/view/js/');
     
     //IMG
-    define('IMG_PATH', SITE_ROOT . 'public/view/images/');
+    define('IMG_PATH', SITE_PATH . 'public/view/images/');
     
     // MODELS
     

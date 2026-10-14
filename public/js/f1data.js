@@ -1,4 +1,4 @@
-console.log('f1data.js cargado');
+// console.log('f1data.js cargado');
 // URL base de la API
 const API_URL = 'http://localhost:3000/api';
 
@@ -53,6 +53,7 @@ function renderLeaderboard(data) {
         const bestLap = driver.BestLapTime?.Value || '-';
         const teamColor = driver.TeamColour ? `#${driver.TeamColour}` : '#888';
         var teamLogo = '';
+        var tyreImg = '';
         // Añadimos el logo de la scuderia
         if (driver.TeamName === 'Red Bull Racing') {
             teamLogo = TEAM_IMAGES + 'RedBull.png';
@@ -78,6 +79,18 @@ function renderLeaderboard(data) {
             teamLogo = TEAM_IMAGES + 'Cadillac.png';
         }
 
+        if (compound === 'SOFT') {
+            tyreImg = TYRES_IMG + 'soft.png';
+        } else if (compound === 'MEDIUM') {
+            tyreImg = TYRES_IMG + 'medium.png';
+        } else if (compound === 'HARD') {
+            tyreImg = TYRES_IMG + 'hard.png';
+        } else if (compound === 'INTERMEDIATE') {
+            tyreImg = TYRES_IMG + 'inters.png';
+        } else if (compound === 'WET') {
+            tyreImg = TYRES_IMG + 'full_wet.png';
+        }
+
         rowsHtml += `
       <tr>
         <td><strong>${driver.Position || '-'}</strong></td>
@@ -89,6 +102,7 @@ function renderLeaderboard(data) {
         <td>${gap}</td>
         <td>${bestLap}</td>
         <td>
+          <span><img class='tyreImg' src='${tyreImg}'></span>
           <span class="tyre-badge tyre-${compound}">${compound}</span>
           <small style="color:#aaa;">${tyreLaps}</small>
         </td>
@@ -110,7 +124,7 @@ async function checkStatus() {
         const res = await fetch(`${API_URL}/status`);
         const status = await res.json();
         if (status.isConnected) {
-            statusBadge.textContent = 'EN VIVO (SignalR)';
+            statusBadge.textContent = 'EN VIVO';
             statusBadge.classList.add('online');
         } else {
             statusBadge.textContent = 'DESCONECTADO';
@@ -122,7 +136,14 @@ async function checkStatus() {
     }
 }
 
+function includeImgHeader() {
+    const imgHeaderHTML = document.getElementById('imgHeader');
+    const imgHeader = HEADER_IMG + 'f1-tracker_header.png';
+    imgHeaderHTML.innerHTML = `<img class='imageHeader' src='${imgHeader}'>`;
+}
+
 // 1. Ejecutar al cargar la página
+includeImgHeader();
 checkStatus();
 fetchF1Data();
 

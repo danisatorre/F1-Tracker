@@ -29,7 +29,8 @@ h1 {
     color: #52b788;
 }
 
-.f1teamlogo {
+.f1teamlogo,
+.tyreImg {
     width: 24px;
     height: 24px;
     object-fit: contain;
@@ -37,9 +38,11 @@ h1 {
     margin-right: 6px;
 }
 
-/* En dispositivos móviles aumentamos el tamaño del logo de la scuderia*/
+/* En dispositivos móviles aumentamos el tamaño del logo de la scuderia y la imagen de los nematicos*/
 @media (max-width: 768px) {
-    .f1teamlogo {
+
+    .f1teamlogo,
+    .tyreImg {
         width: 32px;
         height: 32px;
     }
@@ -73,6 +76,13 @@ td {
 /* Columna del piloto: evita que el nombre salte debajo de la raya y le da anchura mínima */
 th:nth-child(2),
 td:nth-child(2) {
+    white-space: nowrap;
+    min-width: 85px;
+}
+
+/* Columna del neumatico */
+th:nth-child(6),
+td:nth-child(6) {
     white-space: nowrap;
     min-width: 85px;
 }
