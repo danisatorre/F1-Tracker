@@ -1,0 +1,131 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #121214;
+    color: #ffffff;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #e10600;
+    /* Rojo F1 */
+    padding-bottom: 10px;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: #2a2a30;
+    color: #aaa;
+}
+
+.status-badge.online {
+    background: #1b4332;
+    color: #52b788;
+}
+
+.f1teamlogo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+/* En dispositivos móviles aumentamos el tamaño del logo de la scuderia*/
+@media (max-width: 768px) {
+    .f1teamlogo {
+        width: 32px;
+        height: 32px;
+    }
+
+    th,
+    td {
+        padding: 10px 8px;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+        min-width: 95px;
+    }
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: #1a1a1e;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th,
+td {
+    padding: 12px 16px;
+    text-align: left;
+}
+
+/* Columna del piloto: evita que el nombre salte debajo de la raya y le da anchura mínima */
+th:nth-child(2),
+td:nth-child(2) {
+    white-space: nowrap;
+    min-width: 85px;
+}
+
+th {
+    background: #222227;
+    color: #999;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+tr:not(:last-child) {
+    border-bottom: 1px solid #2a2a32;
+}
+
+.team-stripe {
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 2px;
+}
+
+.tyre-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.75rem;
+}
+
+.tyre-SOFT {
+    background: #d90429;
+    color: white;
+}
+
+.tyre-MEDIUM {
+    background: #ffd166;
+    color: black;
+}
+
+.tyre-HARD {
+    background: #ffffff;
+    color: black;
+}
+
+.tyre-INTERMEDIATE {
+    background: #06d6a0;
+    color: black;
+}
+
+.tyre-WET {
+    background: #118ab2;
+    color: white;
+}
