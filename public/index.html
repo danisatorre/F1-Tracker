@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>F1-Tracker</title>
     <link rel="icon" type="image/png" href="<?php echo IMG_PATH?>favicon.png">
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <!-- jQuery Modal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
     <script src="<?php echo SITE_PATH?>public/js/paths.js" defer></script>
     <script src="<?php echo SITE_PATH?>public/js/f1data.js" defer></script>
     <link rel="stylesheet" type="text/css" href="<?php echo SITE_PATH?>public/css/home.css">
@@ -20,6 +25,21 @@
         </p>
     </h1>
 
+    <div class="numLapsDiv" id="numLapsDiv">
+        <h2 class="h1NumLaps">
+            <span class="numLapsText">Vuelta</span>
+            <a id="currentLap">-</a>
+            <a class="lapSeparator">/</a>
+            <a id="totalLaps">-</a>
+        </h2>
+        <select class="switchGapBtn" name="switchGapBtn" id="switchGapBtn">
+            <optgroup label="Diferencia">
+                <option value="leader">Diferencia con el líder</option>
+                <option value="interval">Diferencia con el siguiente</option>
+            </optgroup>
+        </select>
+    </div>
+
     <table>
         <thead>
             <tr>
@@ -27,6 +47,7 @@
                 <th>Piloto</th>
                 <th>Equipo</th>
                 <th>Diferencia</th>
+                <th>Última Vuelta</th>
                 <th>Mejor Vuelta</th>
                 <th>Neumático</th>
                 <th>Pit</th>

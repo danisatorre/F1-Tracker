@@ -16,6 +16,23 @@ h1 {
     padding-bottom: 10px;
 }
 
+.numLapsDiv {
+    width: 10.5%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: #1a1a1e;
+    border-radius: 10%;
+    overflow: hidden;
+}
+
+.numLapsDiv span {
+    margin-left: 15px;
+}
+
+.lapSeparator {
+    color: #e10600;
+}
+
 .status-badge {
     font-size: 0.75rem;
     padding: 4px 8px;
@@ -55,6 +72,17 @@ h1 {
     th:nth-child(2),
     td:nth-child(2) {
         min-width: 95px;
+    }
+
+    .numLapsDiv {
+        width: 55%;
+    }
+}
+
+/* Pantallas de Tablet (Modo vertical y horizontal estándar) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .numLapsDiv {
+        width: 24.3%;
     }
 }
 

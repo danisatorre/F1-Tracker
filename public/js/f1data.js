@@ -23,7 +23,10 @@ async function fetchF1Data() {
 function renderLeaderboard(data) {
     // console.log('function renderLeaderboard f1data.js');
     // return false;
+    console.log(data);
+    // return false;
     const tbody = document.getElementById('leaderboard-body');
+    const divLaps = document.getElementById('numLapsDiv');
 
     // Validar si existen pilotos en la sesión
     if (!data || !data.Leaderboard || data.Leaderboard.length === 0) {
@@ -32,6 +35,17 @@ function renderLeaderboard(data) {
     }
 
     let rowsHtml = '';
+    // Actualizar las vueltas
+    document.getElementById('currentLap').textContent = data.LapCount.CurrentLap;
+    document.getElementById('totalLaps').textContent = data.LapCount.TotalLaps;
+
+
+    // $(document).on('change', '#switchGapBtn', function () {
+    //     valueGap = this.value || 'driver.GapToLeader?.Value || ' - '';
+    // });
+    // console.log(valueGap);
+    let valueGap = document.getElementById('switchGapBtn').value;
+    // console.log(valueGap);
 
     // data.Leaderboard contiene los dorsales ordenados por posición
     data.Leaderboard.forEach((racingNumber) => {
@@ -49,9 +63,18 @@ function renderLeaderboard(data) {
 
         const compound = currentStint?.Compound || 'N/A';
         const tyreLaps = currentStint ? `(${currentStint.TotalLaps || 0} v)` : '';
-        const gap = driver.GapToLeader?.Value || '-';
+        if (valueGap === 'leader') {
+            var gap = driver.GapToLeader?.Value || driver.GapToLeader || '-';
+        } else if (valueGap === 'interval') {
+            var gap = driver.IntervalToPositionAhead?.Value || driver.IntervalToPositionAhead || '-';
+        }
+        const lastLap = driver.LastLapTime?.Value || '-';
         const bestLap = driver.BestLapTime?.Value || '-';
         const teamColor = driver.TeamColour ? `#${driver.TeamColour}` : '#888';
+        const position = driver.Position || '-';
+        // console.log(position);
+
+        if (position === "1") { gap = 'Líder' };
         var teamLogo = '';
         var tyreImg = '';
         // Añadimos el logo de la scuderia
@@ -100,6 +123,7 @@ function renderLeaderboard(data) {
         </td>
         <td><img class='f1teamlogo' src='${teamLogo}'> ${driver.TeamName || '-'}</td>
         <td>${gap}</td>
+        <td>${lastLap}</td>
         <td>${bestLap}</td>
         <td>
           <span><img class='tyreImg' src='${tyreImg}'></span>
