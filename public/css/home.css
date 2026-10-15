@@ -17,9 +17,8 @@ h1 {
 }
 
 .numLapsDiv {
-    width: 10.5%;
+    width: 20%;
     border-collapse: collapse;
-    margin-top: 15px;
     background: #1a1a1e;
     border-radius: 10%;
     overflow: hidden;
@@ -27,11 +26,14 @@ h1 {
 
 .numLapsDiv span {
     margin-left: 15px;
+    margin-right: 15px;
 }
 
 .lapSeparator {
     color: #e10600;
 }
+
+
 
 .status-badge {
     font-size: 0.75rem;
@@ -46,6 +48,32 @@ h1 {
     color: #52b788;
 }
 
+.upTable {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.switchGapBtn,
+.optLeaderm .optInterval {
+    background-color: #1a1a1e;
+    color: #ffffff;
+    border: 1px solid #2a2a32;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+/* Change select background to F1 red on hover */
+.optLeader:hover,
+.optInterval:hover {
+    background-color: #e10600;
+}
+
 .f1teamlogo,
 .tyreImg {
     width: 24px;
@@ -55,7 +83,7 @@ h1 {
     margin-right: 6px;
 }
 
-/* En dispositivos móviles aumentamos el tamaño del logo de la scuderia y la imagen de los nematicos*/
+/* Dispositivos móviles*/
 @media (max-width: 768px) {
 
     .f1teamlogo,
@@ -74,15 +102,21 @@ h1 {
         min-width: 95px;
     }
 
+    .upTable {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
     .numLapsDiv {
-        width: 55%;
+        width: 63%;
     }
 }
 
 /* Pantallas de Tablet (Modo vertical y horizontal estándar) */
 @media (min-width: 769px) and (max-width: 1024px) {
     .numLapsDiv {
-        width: 24.3%;
+        width: 28%;
     }
 }
 
