@@ -23,10 +23,14 @@ async function fetchF1Data() {
 function renderLeaderboard(data) {
     // console.log('function renderLeaderboard f1data.js');
     // return false;
-    console.log(data);
+    // console.log(data);
     // return false;
     const tbody = document.getElementById('leaderboard-body');
     const divLaps = document.getElementById('numLapsDiv');
+    const sessionName = document.getElementById('sessionName');
+
+    // Añadir el nombre de la sesión
+    sessionName.innerHTML = `${data.Session.Meeting.OfficialName}`;
 
     // Validar si existen pilotos en la sesión
     if (!data || !data.Leaderboard || data.Leaderboard.length === 0) {
@@ -72,7 +76,30 @@ function renderLeaderboard(data) {
         const bestLap = driver.BestLapTime?.Value || '-';
         const teamColor = driver.TeamColour ? `#${driver.TeamColour}` : '#888';
         const position = driver.Position || '-';
+        const gridPosition = driver.GridPos || '-';
         // console.log(position);
+        let dif = claculateDifPos(position, gridPosition);
+        // console.log(dif.diferencia);
+        // console.log(dif.tipo);
+
+        let imgDif = '';
+        let difPos = dif.diferencia;
+
+        if (dif.tipo === 'positive') {
+            imgDif = ARROWS_IMG + 'arrowUp.png';
+        } else if (dif.tipo === 'negative') {
+            imgDif = ARROWS_IMG + 'arrowDown.png';
+        } else if (dif.tipo === 'equal') {
+            difPos = '-';
+        }
+
+        let difHtml = '';
+
+        if (dif.tipo === 'equal') {
+            difHtml = ` = `;
+        } else {
+            difHtml = `<img class="imgArrow" src="${imgDif}"</img> <a>${difPos}</a>`;
+        }
 
         if (position === "1") { gap = 'Líder' };
         var teamLogo = '';
@@ -116,7 +143,7 @@ function renderLeaderboard(data) {
 
         rowsHtml += `
       <tr>
-        <td><strong>${driver.Position || '-'}</strong></td>
+        <td><strong>${driver.Position || '-'}${difHtml}</strong></td>
         <td>
           <span class="team-stripe" style="background-color: ${teamColor};"></span>
           <strong>${driver.Tla || driver.BroadcastName || ('#' + racingNumber)}</strong>
@@ -158,6 +185,27 @@ async function checkStatus() {
         statusBadge.textContent = 'API CAÍDA';
         statusBadge.classList.remove('online');
     }
+}
+
+// Calcular diferencia de posiciones respecto a la salida
+function claculateDifPos(position, gridPosition) {
+    const diferencia = Math.abs(gridPosition - position);
+
+    let tipoDiferencia = "";
+
+    if (gridPosition > position) {
+        tipoDiferencia = "positive";
+    } else if (gridPosition < position) {
+        tipoDiferencia = "negative";
+    } else {
+        tipoDiferencia = "equal";
+    }
+
+    // Retornamos un objeto con los resultados
+    return {
+        diferencia: diferencia,
+        tipo: tipoDiferencia
+    };
 }
 
 function includeImgHeader() {
