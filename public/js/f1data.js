@@ -25,12 +25,62 @@ function renderLeaderboard(data) {
     // return false;
     // console.log(data);
     // return false;
+    const trTable = document.getElementById('leaderboard-tr');
     const tbody = document.getElementById('leaderboard-body');
     const divLaps = document.getElementById('numLapsDiv');
     const sessionName = document.getElementById('sessionName');
+    let typeSession = data.Session.Type;
+    // typeSession = 'Qualifying';
+    // console.log(typeSession);
 
     // Añadir el nombre de la sesión
     sessionName.innerHTML = `${data.Session.Meeting.OfficialName}`;
+
+    if (typeSession === 'Race' || typeSession === 'Sprint') {
+        trTable.innerHTML = `
+            <tr>
+                <th>Pos</th>
+                <th>Piloto</th>
+                <th>Equipo</th>
+                <th>Diferencia</th>
+                <th>Última Vuelta</th>
+                <th>Mejor Vuelta</th>
+                <th>Neumático</th>
+                <th>Pit</th>
+            </tr>
+        `
+    } else if (typeSession === 'Qualifying') {
+        trTable.innerHTML = `
+            <tr>
+                <th>Pos</th>
+                <th>Piloto</th>
+                <th>Equipo</th>
+                <th>Diferencia</th>
+                <th>Sector 1</th>
+                <th>Sector 2</th>
+                <th>Sector 3</th>
+                <th>Mejor Vuelta</th>
+                <th>Neumático</th>
+                <th>Pit</th>
+            </tr>
+        `
+    } else if (typeSession === 'Practice') {
+        trTable.innerHTML = `
+            <tr>
+                <th>Pos</th>
+                <th>Piloto</th>
+                <th>Equipo</th>
+                <th>Diferencia</th>
+                <th>Sector 1</th>
+                <th>Sector 2</th>
+                <th>Sector 3</th>
+                <th>Última Vuelta</th>
+                <th>Mejor Vuelta</th>
+                <th>Neumático</th>
+                <th>Pit</th>
+            </tr>
+        `
+    }
 
     // Validar si existen pilotos en la sesión
     if (!data || !data.Leaderboard || data.Leaderboard.length === 0) {
@@ -77,7 +127,62 @@ function renderLeaderboard(data) {
         const teamColor = driver.TeamColour ? `#${driver.TeamColour}` : '#888';
         const position = driver.Position || '-';
         const gridPosition = driver.GridPos || '-';
+        // Sectores para calsificación
+        const sectors = driver.Sectors || '-';
+        // Sector 1
+        const sector1 = sectors[0];
+        var sector1Time = sector1.Value;
+        var sector1OF = sector1.OverallFastest;
+        var sector1PF = sector1.PersonalFastest;
+        // Sector 2
+        const sector2 = sectors[1];
+        var sector2Time = sector2.Value;
+        var sector2OF = sector2.OverallFastest;
+        var sector2PF = sector2.PersonalFastest;
+        // Sector 3
+        const sector3 = sectors[2];
+        var sector3Time = sector3.Value;
+        var sector3OF = sector3.OverallFastest;
+        var sector3PF = sector3.PersonalFastest;
+        console.log(sectors);
+        // console.log(sector1);
+        // console.log(sector1Time);
+        // if (sector1OF) {
+        //     console.log('Sector 1 Morado');
+        // } else if (sector1PF) {
+        //     console.log('Sector 1 Verde');
+        // } else {
+        //     console.log('Sector 1 Blanco');
+        // }
+        // console.log(sector2);
+        // console.log(sector3);
         // console.log(position);
+        if (sector1Time === '') {
+            sector1Time = ' - ';
+        }
+        if (sector2Time === '') {
+            sector2Time = ' - ';
+        }
+        if (sector3Time === '') {
+            sector3Time = ' - ';
+        }
+
+        // Prueba para los colores de los sectores
+        // if (racingNumber === '3') {
+        //     sector1OF = true;
+        // }
+        // if (racingNumber === '81') {
+        //     sector2PF = true;
+        // }
+        // if (racingNumber === '44') {
+        //     sector1PF = true;
+        //     sector2OF = true;
+        //     sector3PF = true;
+        // }
+        // if (racingNumber === '16') {
+        //     sector3OF = true;
+        // }
+
         let dif = claculateDifPos(position, gridPosition);
         // console.log(dif.diferencia);
         // console.log(dif.tipo);
@@ -95,10 +200,12 @@ function renderLeaderboard(data) {
 
         let difHtml = '';
 
-        if (dif.tipo === 'equal') {
-            difHtml = ` = `;
-        } else {
-            difHtml = `<img class="imgArrow" src="${imgDif}"</img> <a>${difPos}</a>`;
+        if (typeSession === 'Race') {
+            if (dif.tipo === 'equal') {
+                difHtml = ` = `;
+            } else {
+                difHtml = `<img class="imgArrow" src="${imgDif}"</img> <a>${difPos}</a>`;
+            }
         }
 
         if (position === "1") { gap = 'Líder' };
@@ -141,25 +248,51 @@ function renderLeaderboard(data) {
             tyreImg = TYRES_IMG + 'full_wet.png';
         }
 
-        rowsHtml += `
-      <tr>
-        <td><strong>${driver.Position || '-'}${difHtml}</strong></td>
-        <td>
-          <span class="team-stripe" style="background-color: ${teamColor};"></span>
-          <strong>${driver.Tla || driver.BroadcastName || ('#' + racingNumber)}</strong>
-        </td>
-        <td><img class='f1teamlogo' src='${teamLogo}'> ${driver.TeamName || '-'}</td>
-        <td>${gap}</td>
-        <td>${lastLap}</td>
-        <td>${bestLap}</td>
-        <td>
-          <span><img class='tyreImg' src='${tyreImg}'></span>
-          <span class="tyre-badge tyre-${compound}">${compound}</span>
-          <small style="color:#aaa;">${tyreLaps}</small>
-        </td>
-        <td>${driver.InPit ? '🛑 EN BOX' : (driver.NumberOfPitStops || 0)}</td>
-      </tr>
-    `;
+        if (typeSession === 'Race' || typeSession === 'Sprint') {
+            rowsHtml += `
+                <tr>
+                    <td><strong>${driver.Position || '-'}${difHtml}</strong></td>
+                    <td>
+                    <span class="team-stripe" style="background-color: ${teamColor};"></span>
+                    <strong>${driver.Tla || driver.BroadcastName || ('#' + racingNumber)}</strong>
+                    </td>
+                    <td><img class='f1teamlogo' src='${teamLogo}'> ${driver.TeamName || '-'}</td>
+                    <td>${gap}</td>
+                    <td>${lastLap}</td>
+                    <td>${bestLap}</td>
+                    <td>
+                    <span><img class='tyreImg' src='${tyreImg}'></span>
+                    <span class="tyre-badge tyre-${compound}">${compound}</span>
+                    <small style="color:#aaa;">${tyreLaps}</small>
+                    </td>
+                    <td>${driver.InPit ? '🛑 EN BOX' : (driver.NumberOfPitStops || 0)}</td>
+                </tr>
+            `;
+        } else if (typeSession === 'Qualifying') {
+            rowsHtml += `
+                <tr>
+                    <td><strong>${driver.Position || '-'}</strong></td>
+                    <td>
+                    <span class="team-stripe" style="background-color: ${teamColor};"></span>
+                    <strong>${driver.Tla || driver.BroadcastName || ('#' + racingNumber)}</strong>
+                    </td>
+                    <td><img class='f1teamlogo' src='${teamLogo}'> ${driver.TeamName || '-'}</td>
+                    <td>${gap}</td>
+                    <td class="sector1TimeTable" style="${sector1OF ? 'color: #9b59b6;' : (sector1PF ? 'color: #2ecc71;' : '')}">${sector1Time}</td>
+                    <td class="sector2TimeTable" style="${sector2OF ? 'color: #9b59b6;' : (sector2PF ? 'color: #2ecc71;' : '')}">${sector2Time}</td>
+                    <td class="sector3TimeTable" style="${sector3OF ? 'color: #9b59b6;' : (sector3PF ? 'color: #2ecc71;' : '')}">${sector3Time}</td>
+                    <td>${bestLap}</td>
+                    <td>
+                    <span><img class='tyreImg' src='${tyreImg}'></span>
+                    <span class="tyre-badge tyre-${compound}">${compound}</span>
+                    <small style="color:#aaa;">${tyreLaps}</small>
+                    </td>
+                    <td>${driver.InPit ? '🛑 EN BOX' : ' - '}</td>
+                </tr>
+            `;
+        } else if (typeSession === 'Practice') {
+
+        }
     });
 
     tbody.innerHTML = rowsHtml;
