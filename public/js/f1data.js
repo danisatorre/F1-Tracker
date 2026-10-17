@@ -1,6 +1,7 @@
 // console.log('f1data.js cargado');
 // URL base de la API
-const API_URL = 'http://localhost:3000/api';
+// const API_URL = 'http://localhost:3000/api';
+const API_URL = `http://${window.location.hostname}:3000/api`;
 
 // Obtener los datos y imprimirlos en pantalla
 
@@ -119,6 +120,7 @@ function renderLeaderboard(data) {
         const teamColor = driver.TeamColour ? `#${driver.TeamColour}` : '#888';
         const position = driver.Position || '-';
         const gridPosition = driver.GridPos || '-';
+        const driverRetired = driver.Retired;
         // Sectores para calsificación
         const sectors = driver.Sectors || '-';
         // Sector 1
@@ -343,5 +345,5 @@ checkStatus();
 fetchF1Data();
 
 // 2. Mantener actualizado periódicamente (Polling)
-// setInterval(fetchF1Data, 1000);
-// setInterval(checkStatus, 5000);
+setInterval(fetchF1Data, 1000);
+setInterval(checkStatus, 5000);
