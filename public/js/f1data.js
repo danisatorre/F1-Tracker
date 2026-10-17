@@ -27,11 +27,23 @@ function renderLeaderboard(data) {
     // return false;
     const trTable = document.getElementById('leaderboard-tr');
     const tbody = document.getElementById('leaderboard-body');
-    const divLaps = document.getElementById('numLapsDiv');
     const sessionName = document.getElementById('sessionName');
+    const lapsHtml = document.getElementById('lapsHtml');
     let typeSession = data.Session.Type;
     // typeSession = 'Qualifying';
     // console.log(typeSession);
+
+    // Añadir el número de vueltas para la carrera y sprint
+    if (typeSession === 'Race' || typeSession === 'Sprint') {
+        lapsHtml.innerHTML = `
+            <h2 class="h2NumLaps">
+                <span class="numLapsText">Vuelta</span>
+                <a id="currentLap">${data.LapCount.CurrentLap}</a>
+                <a class="lapSeparator">/</a>
+                <a id="totalLaps">${data.LapCount.TotalLaps}</a>
+            </h2>
+        `;
+    }
 
     // Añadir el nombre de la sesión
     sessionName.innerHTML = `${data.Session.Meeting.OfficialName}`;
@@ -49,7 +61,7 @@ function renderLeaderboard(data) {
                 <th>Pit</th>
             </tr>
         `
-    } else if (typeSession === 'Qualifying') {
+    } else if (typeSession === 'Qualifying' || typeSession === 'Practice') {
         trTable.innerHTML = `
             <tr>
                 <th>Pos</th>
@@ -59,22 +71,6 @@ function renderLeaderboard(data) {
                 <th>Sector 1</th>
                 <th>Sector 2</th>
                 <th>Sector 3</th>
-                <th>Mejor Vuelta</th>
-                <th>Neumático</th>
-                <th>Pit</th>
-            </tr>
-        `
-    } else if (typeSession === 'Practice') {
-        trTable.innerHTML = `
-            <tr>
-                <th>Pos</th>
-                <th>Piloto</th>
-                <th>Equipo</th>
-                <th>Diferencia</th>
-                <th>Sector 1</th>
-                <th>Sector 2</th>
-                <th>Sector 3</th>
-                <th>Última Vuelta</th>
                 <th>Mejor Vuelta</th>
                 <th>Neumático</th>
                 <th>Pit</th>
@@ -89,10 +85,6 @@ function renderLeaderboard(data) {
     }
 
     let rowsHtml = '';
-    // Actualizar las vueltas
-    document.getElementById('currentLap').textContent = data.LapCount.CurrentLap;
-    document.getElementById('totalLaps').textContent = data.LapCount.TotalLaps;
-
 
     // $(document).on('change', '#switchGapBtn', function () {
     //     valueGap = this.value || 'driver.GapToLeader?.Value || ' - '';
@@ -268,7 +260,7 @@ function renderLeaderboard(data) {
                     <td>${driver.InPit ? '🛑 EN BOX' : (driver.NumberOfPitStops || 0)}</td>
                 </tr>
             `;
-        } else if (typeSession === 'Qualifying') {
+        } else if (typeSession === 'Qualifying' || typeSession === 'Practice') {
             rowsHtml += `
                 <tr>
                     <td><strong>${driver.Position || '-'}</strong></td>
@@ -290,8 +282,6 @@ function renderLeaderboard(data) {
                     <td>${driver.InPit ? '🛑 EN BOX' : ' - '}</td>
                 </tr>
             `;
-        } else if (typeSession === 'Practice') {
-
         }
     });
 
@@ -353,5 +343,5 @@ checkStatus();
 fetchF1Data();
 
 // 2. Mantener actualizado periódicamente (Polling)
-setInterval(fetchF1Data, 1000);
-setInterval(checkStatus, 5000);
+// setInterval(fetchF1Data, 1000);
+// setInterval(checkStatus, 5000);
