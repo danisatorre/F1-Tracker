@@ -4,7 +4,6 @@
 const API_URL = `http://${window.location.hostname}:3000/api`;
 
 // Obtener los datos y imprimirlos en pantalla
-
 async function fetchF1Data() {
     // console.log('function fetchF1Data f1data.js');
     // return false;
@@ -20,7 +19,6 @@ async function fetchF1Data() {
 }
 
 // Imprimir los datos del servidor en el frontend
-
 function renderLeaderboard(data) {
     // console.log('function renderLeaderboard f1data.js');
     // return false;
@@ -138,7 +136,7 @@ function renderLeaderboard(data) {
         var sector3Time = sector3.Value;
         var sector3OF = sector3.OverallFastest;
         var sector3PF = sector3.PersonalFastest;
-        console.log(sectors);
+        // console.log(sectors);
         // console.log(sector1);
         // console.log(sector1Time);
         // if (sector1OF) {
@@ -291,7 +289,6 @@ function renderLeaderboard(data) {
 }
 
 // Consulta el estado de conexión con el SignalR de la F1
-
 async function checkStatus() {
     // console.log('fucntion checkStatus f1data.js');
     // return false;
@@ -333,17 +330,144 @@ function claculateDifPos(position, gridPosition) {
     };
 }
 
+// Incluir la imagen del header
 function includeImgHeader() {
     const imgHeaderHTML = document.getElementById('imgHeader');
     const imgHeader = HEADER_IMG + 'f1-tracker_header.png';
     imgHeaderHTML.innerHTML = `<img class='imageHeader' src='${imgHeader}'>`;
 }
 
+// Consultar los mensajes de dirección de carrera
+async function fetchRaceControl() {
+    try {
+        const response = await fetch(`${API_URL}/race-control`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const messages = data.RaceControl || [];
+
+        // Procesar los mensajes para obtener el estado actual
+        updateTrackStatus(messages);
+    } catch (error) {
+        console.error('Error al obtener mensajes de Race Control:', error);
+    }
+}
+
+// Estado actual de la pista
+function updateTrackStatus(messages) {
+    const banner = document.getElementById('track-status-banner');
+    const FIA_logo = OTHERS_IMG + 'fia_logo.png';
+    const carImg = OTHERS_IMG + 'car.png';
+    if (!banner) return;
+
+    if (!messages || messages.length === 0) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    // Buscar el último mensaje relevante
+    let currentStatus = null;
+
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const msg = messages[i];
+        let text = (msg.Message || '').toUpperCase();
+        let flag = (msg.Flag || '').toUpperCase();
+        let mode = (msg.Mode || '').toUpperCase();
+        let category = (msg.Category || '').toUpperCase();
+        let status = (msg.Status || '').toUpperCase();
+
+        // console.log('msg\n', msg);
+        // console.log('text\n', text);
+        // console.log('flag\n', flag);
+        // console.log('mode\n', mode);
+        // console.log('status\n', status);
+
+        // Modificación de datos de la API para hacer pruebas
+        // mode = 'SAFETY CAR';
+        // mode = 'VIRTUAL';
+        // mode = 'RED';
+        // flag = 'RED';
+        // flag = 'YELLOW';
+        // msg.Sector = '2';
+        // flag = 'DOUBLE YELLOW';
+        // flag = 'GREEN';
+        // flag = 'CLEAR';
+        // flag = 'CHEQUERED';
+        // text = 'IN THIS LAP';
+        // text = 'ENDING';
+        // category = 'Other';
+        // text = 'CAR 12 (ANT) TIME 2:03.833 DELETED - TRACK LIMITS AT TURN 7 LAP 40 21:09:33';
+
+        // Safety Car 
+        if (mode.includes('SAFETY CAR') && !mode.includes('VIRTUAL') || text.includes('SAFETY CAR DEPLOYED')) {
+            if (status === 'IN THIS LAP' || text.includes('IN THIS LAP')) {
+                currentStatus = { type: 'sc-ending', label: `<img class="car_img" src="${carImg}">SAFETY CAR ENTRANDO EN BOX`, class: 'status-sc' };
+            } else {
+                currentStatus = { type: 'sc', label: `<img class="car_img" src="${carImg}">SAFETY CAR (SC)`, class: 'status-sc' };
+            }
+            break;
+        }
+
+        // Virtual Safety Car
+        if (mode.includes('VIRTUAL') || text.includes('VIRTUAL SAFETY CAR')) {
+            if (status === 'ENDING' || text.includes('ENDING')) {
+                currentStatus = { type: 'vsc-ending', label: `<img class="car_img" src="${carImg}">VSC TERMINANDO`, class: 'status-vsc' };
+            } else {
+                currentStatus = { type: 'vsc', label: `<img class="car_img" src="${carImg}">VIRTUAL SAFETY CAR (VSC)`, class: 'status-vsc' };
+            }
+            break;
+        }
+
+        // Categoria de 'Other' (Normalmente avisos de sanciones, track limits, etc.)
+        if (category === 'Other') {
+            currentStatus = { type: 'other', label: `<img class="fia_msg_img" src="${FIA_logo}">${text}`, class: 'status-other' };
+            break;
+        }
+
+        // Bandera a cuadros
+        if (flag === 'CHEQUERED' || text.includes('CHEQUERED')) {
+            currentStatus = { type: 'chequered', label: `BANDERA A CUADROS`, class: 'status-chequered' };
+            break;
+        }
+
+        // Bandera Roja
+        if (flag === 'RED' || text.includes('RED FLAG')) {
+            currentStatus = { type: 'red', label: 'BANDERA ROJA - SESIÓN DETENIDA', class: 'status-red' };
+            break;
+        }
+
+        // Bandera Amarilla
+        if (flag === 'YELLOW' || flag === 'DOUBLE YELLOW' || text.includes('YELLOW')) {
+            const sectorText = msg.Sector ? ` EN SECTOR ${msg.Sector}` : '';
+            currentStatus = { type: 'yellow', label: `BANDERA AMARILLA${sectorText}`, class: 'status-yellow' };
+            break;
+        }
+
+        // Bandera Verde / Fin de peligro
+        if (flag === 'GREEN' || flag === 'CLEAR' || text.includes('CLEAR') || text.includes('GREEN FLAG')) {
+            currentStatus = { type: 'green', label: 'PISTA LIBRE / BANDERA VERDE', class: 'status-green' };
+            break;
+        }
+    }
+
+    // Renderizar en el DOM
+    if (currentStatus) {
+        banner.innerHTML = currentStatus.label;
+        banner.className = `track-status-banner ${currentStatus.class}`;
+        banner.style.display = 'inline-block';
+    } else {
+        banner.style.display = 'none';
+    }
+}
+
+
 // 1. Ejecutar al cargar la página
 includeImgHeader();
 checkStatus();
 fetchF1Data();
+fetchRaceControl();
 
 // 2. Mantener actualizado periódicamente (Polling)
 setInterval(fetchF1Data, 1000);
 setInterval(checkStatus, 5000);
+setInterval(fetchRaceControl, 2000);

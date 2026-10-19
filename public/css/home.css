@@ -94,6 +94,83 @@ h1 {
     margin-left: 6px;
 }
 
+/* Banner de estado de pista */
+.track-status-banner {
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+    display: inline-block;
+}
+
+/* Bandera Amarilla */
+.track-status-banner.status-yellow {
+    background-color: #ffd000;
+    color: #000000;
+}
+
+/* Bandera Roja (animada con pulso) */
+.track-status-banner.status-red {
+    background-color: #d90429;
+    color: #ffffff;
+    animation: pulse-red 1s infinite alternate;
+}
+
+/* Safety Car Físico y VSC */
+.track-status-banner.status-sc {
+    background-color: #ff9100;
+    color: #000000;
+}
+
+.track-status-banner.status-vsc {
+    background-color: #ffb703;
+    color: #000000;
+}
+
+/* Bandera Verde */
+.track-status-banner.status-green {
+    background-color: #2a9d8f;
+    color: #ffffff;
+}
+
+/* Bandera a cuadros */
+.track-status-banner.status-chequered {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* Categoria 'Other' */
+.track-status-banner.status-other {
+    background-color: #081E3A;
+    color: #ffffff;
+}
+
+.fia_msg_img,
+.car_img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 9px;
+    margin-left: 6px;
+}
+
+@keyframes pulse-red {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0.7;
+        transform: scale(1.03);
+    }
+}
+
+
 /* Dispositivos móviles*/
 @media (max-width: 768px) {
 

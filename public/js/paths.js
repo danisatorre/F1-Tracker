@@ -5,3 +5,4 @@ const TEAM_IMAGES = SITE_PATH + "public/view/images/f1teams/";
 const TYRES_IMG = SITE_PATH + "public/view/images/tyres/";
 const HEADER_IMG = SITE_PATH + "public/view/images/header/";
 const ARROWS_IMG = SITE_PATH + "public/view/images/arrows/";
+const OTHERS_IMG = SITE_PATH + "public/view/images/others/";
