@@ -1,7 +1,16 @@
 // console.log('f1data.js cargado');
 // URL base de la API
 // const API_URL = 'http://localhost:3000/api';
+
+// URL de la API
 const API_URL = `http://${window.location.hostname}:3000/api`;
+// URL de los archivos estáticos de la F1
+const F1_STATIC_BASE_URL = 'https://livetiming.formula1.com/static/';
+// Estado del reproductor interactivo de radios
+let activeAudio = null;
+let activeRadioPath = null;
+let lastRadiosData = null;
+let currentSessionPath = '';
 
 // Obtener los datos y imprimirlos en pantalla
 async function fetchF1Data() {
@@ -28,6 +37,9 @@ function renderLeaderboard(data) {
     const tbody = document.getElementById('leaderboard-body');
     const sessionName = document.getElementById('sessionName');
     const lapsHtml = document.getElementById('lapsHtml');
+    if (data && data.Session && data.Session.Path) {
+        currentSessionPath = data.Session.Path;
+    }
     let typeSession = data.Session.Type;
     // typeSession = 'Qualifying';
     // console.log(typeSession);
@@ -353,6 +365,283 @@ async function fetchRaceControl() {
     }
 }
 
+// Coger el logotipo de las scuderias
+function getTeamLogo(teamName) {
+    if (!teamName) return '';
+    if (teamName === 'Red Bull Racing') return TEAM_IMAGES + 'RedBull.png';
+    if (teamName === 'Ferrari') return TEAM_IMAGES + 'Ferrari.png';
+    if (teamName === 'Mercedes') return TEAM_IMAGES + 'Mercedes.png';
+    if (teamName === 'McLaren') return TEAM_IMAGES + 'McLaren.png';
+    if (teamName === 'Racing Bulls') return TEAM_IMAGES + 'RacingBulls.png';
+    if (teamName === 'Alpine') return TEAM_IMAGES + 'Alpine.png';
+    if (teamName === 'Williams') return TEAM_IMAGES + 'Williams.png';
+    if (teamName === 'Haas F1 Team') return TEAM_IMAGES + 'Haas.png';
+    if (teamName === 'Aston Martin') return TEAM_IMAGES + 'AstonMartin.png';
+    if (teamName === 'Audi') return TEAM_IMAGES + 'Audi.png';
+    if (teamName === 'Cadillac') return TEAM_IMAGES + 'Cadillac.png';
+    return '';
+}
+
+// Gestionar el formato de fecha de la radio
+function formatRadioTime(utcString) {
+    if (!utcString) return '--:--:--';
+    const date = new Date(utcString);
+    return isNaN(date.getTime()) ? utcString : date.toLocaleTimeString();
+}
+
+// Formatear segundos a formato M:SS (ejemplo: 0:04)
+function formatAudioTime(seconds) {
+    if (isNaN(seconds) || !isFinite(seconds) || seconds < 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+// Coger las radios de la API
+async function fetchTeamRadio() {
+    try {
+        const response = await fetch(`${API_URL}/radio`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.SessionPath) {
+            currentSessionPath = data.SessionPath;
+        }
+        const captures = data.Captures || [];
+
+        renderTeamRadios(captures);
+    } catch (error) {
+        console.error('Error al obtener radios de la API:', error);
+    }
+}
+
+// Introducir la lista de radios en el DOM
+function renderTeamRadios(captures) {
+    const container = document.getElementById('radios-container');
+    if (!container) return;
+
+    if (!captures || captures.length === 0) {
+        container.innerHTML = '<div class="no-radios">No hay transmisiones de radio disponibles en este momento.</div>';
+        lastRadiosData = '[]';
+        return;
+    }
+
+    // Mostrar las radios más recientes primero
+    const reversedCaptures = [...captures].reverse();
+
+    // Comprobar si los datos han cambiado
+    const serialized = JSON.stringify(reversedCaptures);
+    if (serialized === lastRadiosData) {
+        return;
+    }
+    lastRadiosData = serialized;
+
+    let html = '';
+    reversedCaptures.forEach(capture => {
+        const path = capture.Path || '';
+        const isPlaying = (activeRadioPath === path && activeAudio && !activeAudio.paused);
+        const hasAudioClass = (activeRadioPath === path && activeAudio) ? 'has-audio' : '';
+        const cardPlayingClass = isPlaying ? 'is-playing' : '';
+        const btnPlayingClass = isPlaying ? 'playing' : '';
+        const btnLabel = isPlaying ? '⏸ Pausar' : '▶ Reproducir';
+
+        const teamColor = capture.TeamColour ? `#${capture.TeamColour}` : '#e10600';
+        const teamLogo = getTeamLogo(capture.TeamName);
+        const timeFormatted = formatRadioTime(capture.Utc);
+        const driverName = capture.BroadcastName || capture.Tla || `Piloto #${capture.RacingNumber || '?'}`;
+        const racingNum = capture.RacingNumber ? `#${capture.RacingNumber}` : '';
+
+        const initialPct = (isPlaying && activeAudio && activeAudio.duration)
+            ? Math.min(100, (activeAudio.currentTime / activeAudio.duration) * 100)
+            : 0;
+        const initialCurrent = (isPlaying && activeAudio) ? formatAudioTime(activeAudio.currentTime) : '0:00';
+        const initialDuration = (isPlaying && activeAudio && activeAudio.duration) ? formatAudioTime(activeAudio.duration) : '--:--';
+
+        html += `
+            <div class="radio-card ${cardPlayingClass} ${hasAudioClass}" data-path="${path}">
+                <div class="radio-card-header">
+                    <div class="radio-driver-block">
+                        <span class="team-stripe radio-team-stripe" style="background-color: ${teamColor};"></span>
+                        <div>
+                            <span class="radio-driver-name">${driverName}</span>
+                            <span class="radio-driver-number">${racingNum}</span>
+                        </div>
+                    </div>
+                    <span class="radio-time-badge">${timeFormatted}</span>
+                </div>
+                <div class="radio-card-body">
+                    <div class="radio-team-block">
+                        ${teamLogo ? `<img class="radio-team-logo" src="${teamLogo}" alt="">` : ''}
+                        <span>${capture.TeamName || 'Equipo F1'}</span>
+                    </div>
+                    <button class="radio-play-btn ${btnPlayingClass}" data-path="${path}" onclick="toggleRadioPlayback('${path}')">
+                        ${btnLabel}
+                    </button>
+                </div>
+                <div class="radio-progress-container">
+                    <div class="radio-progress-bar">
+                        <div class="radio-progress-fill" style="width: ${initialPct}%;"></div>
+                    </div>
+                    <div class="radio-time-display">
+                        <span class="radio-current-time">${initialCurrent}</span>
+                        <span class="radio-duration-time">${initialDuration}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// Gestionar la reproducción de radios
+async function toggleRadioPlayback(path) {
+    if (!path) return;
+
+    // Si ya estamos reproduciendo esta misma radio, alternamos reproducir / pausar
+    if (activeRadioPath === path && activeAudio) {
+        if (activeAudio.paused) {
+            activeAudio.play().then(() => {
+                updateRadioUI(path, true);
+            }).catch(err => {
+                console.warn('[Radio] Error al reanudar audio:', err);
+            });
+        } else {
+            activeAudio.pause();
+            updateRadioUI(path, false);
+        }
+        return;
+    }
+
+    // Si hay otro audio sonando, pausamos y restablecemos su botón y barra
+    if (activeAudio) {
+        activeAudio.pause();
+        if (activeRadioPath) {
+            resetRadioProgress(activeRadioPath);
+            updateRadioUI(activeRadioPath, false);
+        }
+    }
+
+    // Si todavía no disponemos de currentSessionPath, consultamos la sesión
+    if (!currentSessionPath) {
+        try {
+            const sessionRes = await fetch(`${API_URL}/session`);
+            if (sessionRes.ok) {
+                const sessionData = await sessionRes.json();
+                if (sessionData.Session && sessionData.Session.Path) {
+                    currentSessionPath = sessionData.Session.Path;
+                }
+            }
+        } catch (e) {
+            console.warn('[Radio] Error al consultar session path:', e);
+        }
+    }
+
+    activeRadioPath = path;
+    const sessionDir = currentSessionPath ? (currentSessionPath.endsWith('/') ? currentSessionPath : `${currentSessionPath}/`) : '';
+    const fullAudioUrl = path.startsWith('http') ? path : `${F1_STATIC_BASE_URL}${sessionDir}${path}`;
+    // console.log('Radio URL:', fullAudioUrl);
+    activeAudio = new Audio(fullAudioUrl);
+
+    activeAudio.onloadedmetadata = () => {
+        updateRadioProgress(path, activeAudio.currentTime, activeAudio.duration);
+    };
+
+    activeAudio.ontimeupdate = () => {
+        updateRadioProgress(path, activeAudio.currentTime, activeAudio.duration);
+    };
+
+    activeAudio.onplay = () => updateRadioUI(path, true);
+    activeAudio.onpause = () => updateRadioUI(path, false);
+    activeAudio.onended = () => {
+        resetRadioProgress(path);
+        updateRadioUI(path, false);
+        activeAudio = null;
+        activeRadioPath = null;
+    };
+    activeAudio.onerror = (e) => {
+        console.warn('[Radio] Error al cargar o reproducir audio:', e);
+        resetRadioProgress(path);
+        updateRadioUI(path, false);
+        activeAudio = null;
+        activeRadioPath = null;
+    };
+
+    activeAudio.play().catch(err => {
+        console.warn('[Radio] Autoplay bloqueado o fallo en reproducción:', err);
+        resetRadioProgress(path);
+        updateRadioUI(path, false);
+        activeAudio = null;
+        activeRadioPath = null;
+    });
+}
+
+// Actualizar la barra progresiva y los contadores de tiempo
+function updateRadioProgress(path, current, duration) {
+    const card = document.querySelector(`.radio-card[data-path="${path}"]`);
+    if (!card) return;
+
+    const fill = card.querySelector('.radio-progress-fill');
+    const currentEl = card.querySelector('.radio-current-time');
+    const durationEl = card.querySelector('.radio-duration-time');
+
+    const validCurrent = isNaN(current) ? 0 : current;
+    const validDuration = (isNaN(duration) || !isFinite(duration)) ? 0 : duration;
+    const pct = validDuration > 0 ? Math.min(100, (validCurrent / validDuration) * 100) : 0;
+
+    if (fill) {
+        fill.style.width = `${pct}%`;
+    }
+    if (currentEl) {
+        currentEl.textContent = formatAudioTime(validCurrent);
+    }
+    if (durationEl && validDuration > 0) {
+        durationEl.textContent = formatAudioTime(validDuration);
+    }
+}
+
+// Restablecer la barra de progreso
+function resetRadioProgress(path) {
+    const card = document.querySelector(`.radio-card[data-path="${path}"]`);
+    if (!card) return;
+
+    const fill = card.querySelector('.radio-progress-fill');
+    const currentEl = card.querySelector('.radio-current-time');
+    const durationEl = card.querySelector('.radio-duration-time');
+
+    if (fill) fill.style.width = '0%';
+    if (currentEl) currentEl.textContent = '0:00';
+    if (durationEl) durationEl.textContent = '--:--';
+}
+
+// Estado visual de la radio
+function updateRadioUI(path, isPlaying) {
+    const card = document.querySelector(`.radio-card[data-path="${path}"]`);
+    const btn = document.querySelector(`.radio-play-btn[data-path="${path}"]`);
+
+    if (card) {
+        if (isPlaying) {
+            card.classList.add('is-playing');
+            card.classList.add('has-audio');
+        } else {
+            card.classList.remove('is-playing');
+            if (!activeAudio || activeRadioPath !== path) {
+                card.classList.remove('has-audio');
+            }
+        }
+    }
+
+    if (btn) {
+        if (isPlaying) {
+            btn.classList.add('playing');
+            btn.innerHTML = '⏸ Pausar';
+        } else {
+            btn.classList.remove('playing');
+            btn.innerHTML = '▶ Reproducir';
+        }
+    }
+}
+
 // Estado actual de la pista
 function updateTrackStatus(messages) {
     const banner = document.getElementById('track-status-banner');
@@ -466,8 +755,10 @@ includeImgHeader();
 checkStatus();
 fetchF1Data();
 fetchRaceControl();
+fetchTeamRadio();
 
 // 2. Mantener actualizado periódicamente (Polling)
 setInterval(fetchF1Data, 1000);
 setInterval(checkStatus, 5000);
 setInterval(fetchRaceControl, 2000);
+setInterval(fetchTeamRadio, 3000);

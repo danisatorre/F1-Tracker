@@ -222,10 +222,13 @@ function getDriversDirectory(f1Client) {
 
 /**
  * Retrieves team radio transmissions enriched with driver basic identity from DriverList.
+ * @param {F1LiveClient} f1Client - Active instance of F1LiveClient.
+ * @returns {Object} Object containing active SessionPath and list of enriched radio captures.
  */
 function getEnrichedTeamRadio(f1Client) {
     const teamRadio = f1Client.getTeamRadio() || [];
     const driverList = f1Client.getDriverList() || {};
+    const sessionInfo = f1Client.getSessionInfo() || {};
 
     const enrichedCaptures = teamRadio.map((capture) => {
         const racingNumber = capture.RacingNumber;
@@ -240,6 +243,7 @@ function getEnrichedTeamRadio(f1Client) {
     });
 
     return {
+        SessionPath: sessionInfo.Path || null,
         Captures: enrichedCaptures
     };
 }
