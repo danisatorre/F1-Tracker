@@ -608,6 +608,9 @@ function resetRadioProgress(path) {
     const fill = card.querySelector('.radio-progress-fill');
     const currentEl = card.querySelector('.radio-current-time');
     const durationEl = card.querySelector('.radio-duration-time');
+    // console.log('FILL', fill);
+    // console.log('currentEl', currentEl);
+    // console.log('durationEl', durationEl);
 
     if (fill) fill.style.width = '0%';
     if (currentEl) currentEl.textContent = '0:00';
@@ -625,9 +628,7 @@ function updateRadioUI(path, isPlaying) {
             card.classList.add('has-audio');
         } else {
             card.classList.remove('is-playing');
-            if (!activeAudio || activeRadioPath !== path) {
-                card.classList.remove('has-audio');
-            }
+            card.classList.remove('has-audio');
         }
     }
 
