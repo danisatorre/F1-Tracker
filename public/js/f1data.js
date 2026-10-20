@@ -750,6 +750,22 @@ function updateTrackStatus(messages) {
     }
 }
 
+function showRadios() {
+    const textViewRadios = document.getElementById('text-view-radios');
+    let countClicksViewRadios = 0;
+
+    $(document).on('click', '.text-view-radios', function () {
+        $('.slide-radios').slideToggle();
+        countClicksViewRadios++;
+        // console.log(countClicksViewRadios);
+        if (countClicksViewRadios % 2 === 0) {
+            textViewRadios.innerHTML = `<a>MOSTRAR RADIOS</a>`;
+        } else {
+            textViewRadios.innerHTML = `<a>OCULTAR RADIOS</a>`;
+        }
+    });
+}
+
 
 // 1. Ejecutar al cargar la página
 includeImgHeader();
@@ -757,6 +773,7 @@ checkStatus();
 fetchF1Data();
 fetchRaceControl();
 fetchTeamRadio();
+showRadios();
 
 // 2. Mantener actualizado periódicamente (Polling)
 setInterval(fetchF1Data, 1000);
