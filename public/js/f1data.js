@@ -91,11 +91,18 @@ function renderLeaderboard(data) {
     const tbody = document.getElementById('leaderboard-body');
     const sessionName = document.getElementById('sessionName');
     const lapsHtml = document.getElementById('lapsHtml');
+    const selectorOptGap = document.getElementById('selOptGap');
+
+    let gap = '';
+    let compound = '';
+    let tyreLaps = '';
+
     if (data && data.Session && data.Session.Path) {
         currentSessionPath = data.Session.Path;
     }
     let typeSession = data.Session.Type;
     // typeSession = 'Qualifying';
+    // typeSession = 'Race';
     // console.log(typeSession);
 
     // Añadir el número de vueltas para la carrera y sprint
@@ -114,6 +121,7 @@ function renderLeaderboard(data) {
     sessionName.innerHTML = `${data.Session.Meeting.OfficialName}`;
 
     if (typeSession === 'Race' || typeSession === 'Sprint') {
+
         trTable.innerHTML = `
             <tr>
                 <th>Pos</th>
@@ -168,17 +176,39 @@ function renderLeaderboard(data) {
         if (!driver) return;
 
         // Obtener último neumático usado si existe el array de Stints
-        const currentStint = driver.Stints && driver.Stints.length > 0
-            ? driver.Stints[driver.Stints.length - 1]
-            : null;
-
-        const compound = currentStint?.Compound || 'N/A';
-        const tyreLaps = currentStint ? `(${currentStint.TotalLaps || 0} v)` : '';
-        if (valueGap === 'leader') {
-            var gap = driver.GapToLeader?.Value || driver.GapToLeader || '-';
-        } else if (valueGap === 'interval') {
-            var gap = driver.IntervalToPositionAhead?.Value || driver.IntervalToPositionAhead || '-';
+        // En Race/Sprint llega como Array; en Qualifying/Practice como objeto {0:{...}, 1:{...}}
+        // Object.values() normaliza ambos formatos a un array real
+        const stintsRaw = driver.Stints;
+        const stintsArray = stintsRaw
+            ? (Array.isArray(stintsRaw) ? stintsRaw : Object.values(stintsRaw))
+            : [];
+        const currentStint = stintsArray.length > 0 ? stintsArray[stintsArray.length - 1] : null;
+        compound = currentStint?.Compound || 'N/A';
+        tyreLaps = currentStint ? `(${currentStint.TotalLaps || 0} v)` : '';
+        if (typeSession === 'Race' || typeSession === 'Sprint') {
+            if (valueGap === 'leader') {
+                gap = driver.GapToLeader?.Value || driver.GapToLeader || '-';
+            } else if (valueGap === 'interval') {
+                gap = driver.IntervalToPositionAhead?.Value || driver.IntervalToPositionAhead || '-';
+            }
+        } else if (typeSession === 'Qualifying' || typeSession === 'Practice') {
+            if (driver.TimeDiffToFastest === '') {
+                gap = 'leader';
+            } else {
+                if (valueGap === 'leader') {
+                    gap = driver.TimeDiffToFastest?.Value || driver.TimeDiffToFastest || '-';
+                    var pruebaGap = 'QPleader';
+                } else if (valueGap === 'interval') {
+                    gap = driver.TimeDiffToPositionAhead?.Value || driver.TimeDiffToPositionAhead || '-';
+                    var pruebaGap = 'QPinterval';
+                }
+            }
         }
+        // if (valueGap === 'leader') {
+        //     var gap = driver.GapToLeader?.Value || driver.GapToLeader || '-';
+        // } else if (valueGap === 'interval') {
+        //     var gap = driver.IntervalToPositionAhead?.Value || driver.IntervalToPositionAhead || '-';
+        // }
         const lastLap = driver.LastLapTime?.Value || '-';
         const bestLap = driver.BestLapTime?.Value || '-';
         const teamColor = driver.TeamColour ? `#${driver.TeamColour}` : '#888';
@@ -266,7 +296,17 @@ function renderLeaderboard(data) {
             }
         }
 
+        // Gestionar el gap
         if (position === "1") { gap = 'Líder' };
+        // console.log(gap);
+        // console.log(pruebaGap);
+        // Gestionar el gap para clasificacion y practica
+        var timeToFastest = driver.TimeDiffToFastest || '-';
+        // console.log(timeToFastest);
+        if (timeToFastest === '-') {
+            // console.log('Sin dato de timeToFastest');
+        }
+
         var teamLogo = '';
         var tyreImg = '';
         // Añadimos el logo de la scuderia
@@ -294,6 +334,7 @@ function renderLeaderboard(data) {
             teamLogo = TEAM_IMAGES + 'Cadillac.png';
         }
 
+        // console.log(compound);
         if (compound === 'SOFT') {
             tyreImg = TYRES_IMG + 'soft.png';
         } else if (compound === 'MEDIUM') {
@@ -305,7 +346,7 @@ function renderLeaderboard(data) {
         } else if (compound === 'WET') {
             tyreImg = TYRES_IMG + 'full_wet.png';
         }
-
+        // const selectorOptGap = document.querySelector('.selOptGap');
         if (typeSession === 'Race' || typeSession === 'Sprint') {
             rowsHtml += `
                 <tr>
