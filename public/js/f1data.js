@@ -12,6 +12,14 @@ let activeRadioPath = null;
 let lastRadiosData = null;
 let currentSessionPath = '';
 
+// --- Broadcast Delay (sync telemetry with the TV stream) ---
+/** Delay in milliseconds applied before rendering incoming leaderboard data. */
+let broadcastDelayMs = 0;
+// Cola de los datos que llegan de la tabla de posiciones
+const leaderboardQueue = [];
+// Cola de los datos que llegan del panel de control de la FIA (banderas, safety car...)
+const raceControlQueue = [];
+
 // Obtener los datos y imprimirlos en pantalla
 async function fetchF1Data() {
     // console.log('function fetchF1Data f1data.js');
@@ -21,10 +29,56 @@ async function fetchF1Data() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const data = await response.json();
-        renderLeaderboard(data);
+
+        // Mandar los datos despues del retraso
+        if (broadcastDelayMs > 0) {
+            leaderboardQueue.push({ data, readyAt: Date.now() + broadcastDelayMs });
+        } else {
+            renderLeaderboard(data);
+        }
     } catch (error) {
         console.error('Error al obtener datos de la API:', error);
     }
+}
+
+// Vaciar las colas y cargar los datos que tienen que llegar
+function drainDelayQueues() {
+    const now = Date.now();
+
+    // Mostrar el último elemento que llega del leaderboard
+    let latestLeaderboard = null;
+    while (leaderboardQueue.length > 0 && leaderboardQueue[0].readyAt <= now) {
+        latestLeaderboard = leaderboardQueue.shift().data;
+    }
+    if (latestLeaderboard) renderLeaderboard(latestLeaderboard);
+
+    // Mostrar el último elemento que llega del panel de control de la FIA
+    let latestRaceControl = null;
+    while (raceControlQueue.length > 0 && raceControlQueue[0].readyAt <= now) {
+        latestRaceControl = raceControlQueue.shift().data;
+    }
+    if (latestRaceControl) updateTrackStatus(latestRaceControl);
+}
+
+// Gestionar el retraso que introduce el cliente
+function applyBroadcastDelay() {
+    const input = document.getElementById('broadcast-delay-input');
+    const badge = document.getElementById('broadcast-delay-badge');
+    const seconds = parseFloat(input.value) || 0;
+    const clamped = Math.max(0, Math.min(120, seconds)); // Caparlo a 2 minutos
+
+    broadcastDelayMs = Math.round(clamped * 1000);
+
+    // Descartar los datos en cola que correspondan al retardo anterior
+    leaderboardQueue.length = 0;
+    raceControlQueue.length = 0;
+
+    if (badge) {
+        badge.textContent = broadcastDelayMs > 0 ? `⏱ ${clamped}s` : '⏱ En directo';
+        badge.classList.toggle('delay-active', broadcastDelayMs > 0);
+    }
+
+    // console.log(`[BroadcastDelay] Delay set to ${broadcastDelayMs}ms`);
 }
 
 // Imprimir los datos del servidor en el frontend
@@ -358,8 +412,12 @@ async function fetchRaceControl() {
         const data = await response.json();
         const messages = data.RaceControl || [];
 
-        // Procesar los mensajes para obtener el estado actual
-        updateTrackStatus(messages);
+        // Poner en cola los datos de control de carrera según el retraso
+        if (broadcastDelayMs > 0) {
+            raceControlQueue.push({ data: messages, readyAt: Date.now() + broadcastDelayMs });
+        } else {
+            updateTrackStatus(messages);
+        }
     } catch (error) {
         console.error('Error al obtener mensajes de Race Control:', error);
     }
@@ -750,6 +808,7 @@ function updateTrackStatus(messages) {
     }
 }
 
+// Slide para ver/ocultar las radios
 function showRadios() {
     const textViewRadios = document.getElementById('text-view-radios');
     let countClicksViewRadios = 0;
@@ -766,6 +825,79 @@ function showRadios() {
     });
 }
 
+// Coger los datos del tiempo
+async function fetchWeather() {
+    try {
+        const response = await fetch(`${API_URL}/weather`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        renderWeather(data);
+    } catch (error) {
+        console.error('Error al obtener datos de la API:', error);
+    }
+}
+
+function renderWeather(data) {
+    // console.log(data);
+    const weather = data.Weather;
+    let whtml = document.getElementById('weatherHtml');
+    let divsWeather = '';
+    let airTempHtml = '';
+    let humidityHtml = '';
+    let trackTempHtml = '';
+    let windDirectionHtml = '';
+    let windSpeedHtml = '';
+    // console.log(weather);
+    // return false;
+
+    const airTemp = weather.AirTemp || '-';
+    const humidity = weather.Humidity || '-';
+    const pressure = weather.Pressure || '-';
+    const rainfall = weather.Rainfall || '-';
+    const trackTemp = weather.TrackTemp || '-';
+    const windDirection = weather.WindDirection || '-';
+    const windSpeed = weather.WindSpeed || '-';
+
+    // console.log('AirTemp:', airTemp);
+    // console.log('Humidity:', humidity);
+    // console.log('Pressure:', pressure);
+    // console.log('Rainfall:', rainfall);
+    // console.log('TrackTemp', trackTemp);
+    // console.log('WindDirection', windDirection);
+    // console.log('WindSpeed', windSpeed);
+    // return false;
+
+    airTempHtml = `
+        <div class="wbox airTemp">
+            <a>Temperatura: ${airTemp}º</a>
+        </div>
+    `;
+    humidityHtml = `
+        <div class="wbox humidity">
+            <a>Humedad: ${humidity}</a>
+        </div>
+    `;
+    trackTempHtml = `
+        <div class="wbox trackTemp">
+            <a>Temperatura en pista: ${trackTemp}º</a>
+        </div>
+    `;
+    windDirectionHtml = `
+        <div class="wbox winDirection">
+            <a>Dirección del viento: ${windDirection}</a>
+        </div>
+    `;
+    windSpeedHtml = `
+        <div class="wbox windSpeed">
+            <a>Velocidad del viento: ${windSpeed}km/h</a>
+        </div>
+    `;
+
+    divsWeather = airTempHtml + humidityHtml + trackTempHtml + windDirectionHtml + windSpeedHtml;
+    whtml.innerHTML = divsWeather;
+}
+
 
 // 1. Ejecutar al cargar la página
 includeImgHeader();
@@ -773,6 +905,7 @@ checkStatus();
 fetchF1Data();
 fetchRaceControl();
 fetchTeamRadio();
+// fetchWeather();
 showRadios();
 
 // 2. Mantener actualizado periódicamente (Polling)
@@ -780,3 +913,7 @@ setInterval(fetchF1Data, 1000);
 setInterval(checkStatus, 5000);
 setInterval(fetchRaceControl, 2000);
 setInterval(fetchTeamRadio, 3000);
+// setInterval(fetchWeather, 5000);
+
+// 3. Vaciar la cola cada 250ms
+setInterval(drainDelayQueues, 250);

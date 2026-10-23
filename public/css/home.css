@@ -54,7 +54,8 @@ h1 {
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 15px;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-top: 15px;
 }
 
@@ -571,4 +572,208 @@ tr:not(:last-child) {
     background: #1a1a1e;
     border-radius: 8px;
     border: 1px dashed #2a2a32;
+}
+
+/* Sección del tiempo */
+.weatherHtml {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    margin: 20px 0;
+}
+
+.wbox {
+    width: 230px;
+    height: 100px;
+    display: flex;
+    aspect-ratio: 1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 2px;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 12px;
+    background:
+        radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.9), transparent 38%),
+        linear-gradient(145deg, #83d4ff 0%, #38a9ed 48%, #1677c8 100%);
+    box-shadow: 0 5px 16px rgba(28, 137, 207, 0.28);
+    color: #082b49;
+    text-align: center;
+}
+
+.wbox a {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+    .weatherHtml {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 4px;
+    }
+
+    .wbox {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .wbox a {
+        font-size: 0.85rem;
+    }
+}
+
+/* ===== Broadcast Delay Control ===== */
+.selOpts {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.selOptDelay {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #1a1a1e;
+    border: 1px solid #2a2a32;
+    border-radius: 10px;
+    padding: 6px 12px;
+}
+
+.delay-label {
+    font-size: 0.8rem;
+    color: #aaa;
+    white-space: nowrap;
+}
+
+.delay-input {
+    width: 58px;
+    background: #0d0d10;
+    color: #ffffff;
+    border: 1px solid #3a3a44;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.875rem;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.delay-input::-webkit-inner-spin-button,
+.delay-input::-webkit-outer-spin-button {
+    opacity: 0.4;
+}
+
+.delay-btn {
+    background: #e10600;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.delay-btn:hover {
+    background: #c00500;
+}
+
+.delay-btn:active {
+    transform: scale(0.96);
+}
+
+.delay-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: #2a2a30;
+    color: #aaa;
+    white-space: nowrap;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.delay-badge.delay-active {
+    background: #4a1a00;
+    color: #ff8c42;
+    border: 1px solid #e10600;
+}
+
+/* --- Responsive: tablet (≤ 768px) --- */
+@media (max-width: 768px) {
+    .upTable {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .selOpts {
+        width: 100%;
+        gap: 10px;
+    }
+
+    .selOptDelay {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: space-between;
+    }
+
+    .delay-label {
+        flex-basis: 100%;
+        margin-bottom: 2px;
+    }
+}
+
+/* --- Responsive: móvil (≤ 480px) --- */
+@media (max-width: 480px) {
+    .selOpts {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .selOptGap {
+        width: 100%;
+    }
+
+    .switchGapBtn {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .selOptDelay {
+        width: 100%;
+        box-sizing: border-box;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 10px 12px;
+    }
+
+    .delay-label {
+        font-size: 0.85rem;
+    }
+
+    .delay-input {
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 1rem;
+        padding: 8px;
+    }
+
+    .delay-btn {
+        width: 100%;
+        padding: 9px;
+        font-size: 0.9rem;
+    }
+
+    .delay-badge {
+        text-align: center;
+    }
 }
