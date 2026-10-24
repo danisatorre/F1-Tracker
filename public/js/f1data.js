@@ -245,13 +245,13 @@ function renderLeaderboard(data) {
         // console.log(sector2);
         // console.log(sector3);
         // console.log(position);
-        if (sector1Time === '') {
+        if (sector1Time === '' || sector1Time === undefined) {
             sector1Time = ' - ';
         }
-        if (sector2Time === '') {
+        if (sector2Time === '' || sector2Time === undefined) {
             sector2Time = ' - ';
         }
-        if (sector3Time === '') {
+        if (sector3Time === '' || sector3Time === undefined) {
             sector3Time = ' - ';
         }
 
@@ -345,6 +345,9 @@ function renderLeaderboard(data) {
             tyreImg = TYRES_IMG + 'inters.png';
         } else if (compound === 'WET') {
             tyreImg = TYRES_IMG + 'full_wet.png';
+        } else if (compound === 'N/A') {
+            tyreImg = '';
+            compound = ' - ';
         }
         // const selectorOptGap = document.querySelector('.selOptGap');
         if (typeSession === 'Race' || typeSession === 'Sprint') {
@@ -382,7 +385,7 @@ function renderLeaderboard(data) {
                     <td class="sector3TimeTable" style="${sector3OF ? 'color: #9b59b6;' : (sector3PF ? 'color: #2ecc71;' : '')}">${sector3Time}</td>
                     <td>${bestLap}</td>
                     <td>
-                    <span><img class='tyreImg' src='${tyreImg}'></span>
+                    ${compound !== 'N/A' ? `<span><img class="tyreImg" src="${tyreImg}"></span>` : ''}
                     <span class="tyre-badge tyre-${compound}">${compound}</span>
                     <small style="color:#aaa;">${tyreLaps}</small>
                     </td>
