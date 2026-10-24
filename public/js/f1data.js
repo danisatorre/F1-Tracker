@@ -245,6 +245,15 @@ function renderLeaderboard(data) {
         // console.log(sector2);
         // console.log(sector3);
         // console.log(position);
+
+        // Debug para manejo de errores //
+        // if (driver.RacingNumber === '44') {
+        //     sector1Time = undefined;
+        //     sector2Time = '';
+        //     sector3Time = undefined;
+        //     compound = 'N/A';
+        // }
+        //
         if (sector1Time === '' || sector1Time === undefined) {
             sector1Time = ' - ';
         }
@@ -385,7 +394,7 @@ function renderLeaderboard(data) {
                     <td class="sector3TimeTable" style="${sector3OF ? 'color: #9b59b6;' : (sector3PF ? 'color: #2ecc71;' : '')}">${sector3Time}</td>
                     <td>${bestLap}</td>
                     <td>
-                    ${compound !== 'N/A' ? `<span><img class="tyreImg" src="${tyreImg}"></span>` : ''}
+                    ${compound === ' - ' ? `` : `<span><img class="tyreImg" src="${tyreImg}"></span>`}
                     <span class="tyre-badge tyre-${compound}">${compound}</span>
                     <small style="color:#aaa;">${tyreLaps}</small>
                     </td>
