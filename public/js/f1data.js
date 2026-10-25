@@ -179,6 +179,8 @@ function renderLeaderboard(data) {
         // En Race/Sprint llega como Array; en Qualifying/Practice como objeto {0:{...}, 1:{...}}
         // Object.values() normaliza ambos formatos a un array real
         const stintsRaw = driver.Stints;
+        // const numStints = stintsRaw.length;
+        // console.log(numStints);
         const stintsArray = stintsRaw
             ? (Array.isArray(stintsRaw) ? stintsRaw : Object.values(stintsRaw))
             : [];
@@ -192,16 +194,47 @@ function renderLeaderboard(data) {
                 gap = driver.IntervalToPositionAhead?.Value || driver.IntervalToPositionAhead || '-';
             }
         } else if (typeSession === 'Qualifying' || typeSession === 'Practice') {
-            if (driver.TimeDiffToFastest === '') {
-                gap = 'leader';
+            // Helper to extract sanitized string value from gap property
+            const parseGap = (val) => {
+                if (val === undefined || val === null) return '';
+                const v = typeof val === 'object' && val.Value !== undefined ? val.Value : val;
+                if (typeof v === 'string') return v.trim();
+                if (typeof v === 'number') return String(v);
+                return '';
+            };
+
+            if (String(driver.Position) === '1') {
+                gap = 'Líder';
             } else {
-                if (valueGap === 'leader') {
-                    gap = driver.TimeDiffToFastest?.Value || driver.TimeDiffToFastest || '-';
-                    var pruebaGap = 'QPleader';
-                } else if (valueGap === 'interval') {
-                    gap = driver.TimeDiffToPositionAhead?.Value || driver.TimeDiffToPositionAhead || '-';
-                    var pruebaGap = 'QPinterval';
+                let foundGap = '';
+                const statsArray = driver.Stats ? (Array.isArray(driver.Stats) ? driver.Stats : Object.values(driver.Stats)) : [];
+
+                // En Qualifying buscamos desde la última fase hacia atrás aquella que tenga tiempos reales (no vacíos)
+                // Esto garantiza que pilotos eliminados en Q1 o Q2 conserven su gap final sin mostrar '-' ni 'Líder'
+                for (let i = statsArray.length - 1; i >= 0; i--) {
+                    const s = statsArray[i];
+                    if (!s) continue;
+                    const fVal = parseGap(s.TimeDiffToFastest);
+                    const aVal = parseGap(s.TimeDiffToPositionAhead ?? s.TimeDifftoPositionAhead);
+
+                    if ((fVal && fVal !== '-') || (aVal && aVal !== '-')) {
+                        const chosen = valueGap === 'leader' ? fVal : aVal;
+                        foundGap = chosen || ' - ';
+                        break;
+                    }
                 }
+
+                // Fallback para Practice (entrenamientos libres) o cuando no hay datos en driver.Stats
+                if (!foundGap) {
+                    const fDirect = parseGap(driver.TimeDiffToFastest);
+                    const aDirect = parseGap(driver.TimeDiffToPositionAhead ?? driver.TimeDifftoPositionAhead);
+                    const chosenDirect = valueGap === 'leader' ? fDirect : aDirect;
+                    if (chosenDirect && chosenDirect !== '-') {
+                        foundGap = chosenDirect;
+                    }
+                }
+
+                gap = foundGap || ' - ';
             }
         }
         // if (valueGap === 'leader') {

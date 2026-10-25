@@ -21,8 +21,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-
-
 // Instantiate and initiate the F1 SignalR live timing connection
 console.log('[Server] Initialising F1LiveClient and connecting to F1 SignalR Core...');
 const f1Client = new F1LiveClient();
