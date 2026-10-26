@@ -30,7 +30,7 @@ const SUBSCRIBE_CHANNELS = [
 
 class F1LiveClient {
     constructor(broadcastCallback) {
-        this.broadcast = broadcastCallback || (() => {});
+        this.broadcast = broadcastCallback || (() => { });
         this.ws = null;
         this.isConnected = false;
         this.lastMessageAt = null;
@@ -141,7 +141,7 @@ class F1LiveClient {
                     console.error('[F1Client] Watchdog timeout: No data received for 20s. Forcing reconnect...');
                     try {
                         this.ws.terminate();
-                    } catch (e) {}
+                    } catch (e) { }
                 }
             }, 20000);
 
@@ -261,10 +261,29 @@ class F1LiveClient {
                 deepMerge(this.timingData, data);
                 this.broadcast({ type: channel, data: this.timingData });
                 break;
-            case 'SessionInfo':
+            case 'SessionInfo': {
+                const incomingPath = data.Path;
+                const currentPath = this.session.Path;
+                const incomingType = data.Type;
+                const currentType = this.session.Type;
+
+                // Detect if session transitioned (example, from Qualifying to Race)
+                const isNewSession =
+                    (incomingPath && currentPath && incomingPath !== currentPath) ||
+                    (incomingType && currentType && incomingType !== currentType);
+
+                if (isNewSession) {
+                    console.log(
+                        `[F1Client] Session transition detected (${currentPath || currentType} -> ${incomingPath || incomingType}). Resetting state...`
+                    );
+                    this.resetSessionData();
+                }
+
                 deepMerge(this.session, data);
                 this.broadcast({ type: 'SessionInfo', data: this.session });
                 break;
+            }
+
             case 'WeatherData':
                 deepMerge(this.weather, data);
                 this.broadcast({ type: 'WeatherData', data: this.weather });
@@ -328,6 +347,19 @@ class F1LiveClient {
             isConnected: this.isConnected,
             lastMessageAt: this.lastMessageAt
         };
+    }
+
+    /**
+     * Resets transient session telemetry caches when transitioning between sessions.
+     * Preserves static meeting metadata and driver directory.
+     */
+    resetSessionData() {
+        this.timingData = { Lines: {} };
+        this.timingAppData = { Lines: {} };
+        this.lapCount = {};
+        this.raceControl = [];
+        this.teamRadio = [];
+        console.log('[F1Client] Session telemetry cache successfully cleared.');
     }
 }
 
