@@ -821,7 +821,7 @@ function updateTrackStatus(messages) {
         let category = (msg.Category || '').toUpperCase();
         let status = (msg.Status || '').toUpperCase();
 
-        // console.log('msg\n', msg);
+        console.log('msg\n', msg);
         // console.log('text\n', text);
         // console.log('flag\n', flag);
         // console.log('mode\n', mode);
@@ -843,8 +843,8 @@ function updateTrackStatus(messages) {
         // category = 'Other';
         // text = 'CAR 12 (ANT) TIME 2:03.833 DELETED - TRACK LIMITS AT TURN 7 LAP 40 21:09:33';
 
-        // Safety Car 
-        if (mode.includes('SAFETY CAR') && !mode.includes('VIRTUAL') || text.includes('SAFETY CAR DEPLOYED')) {
+        // Safety Car (highest priority — stops the scan immediately)
+        if ((mode.includes('SAFETY CAR') && !mode.includes('VIRTUAL')) || text.includes('SAFETY CAR DEPLOYED')) {
             if (status === 'IN THIS LAP' || text.includes('IN THIS LAP')) {
                 currentStatus = { type: 'sc-ending', label: `<img class="car_img" src="${carImg}">SAFETY CAR ENTRANDO EN BOX`, class: 'status-sc' };
             } else {
@@ -852,7 +852,6 @@ function updateTrackStatus(messages) {
             }
             break;
         }
-
         // Virtual Safety Car
         if (mode.includes('VIRTUAL') || text.includes('VIRTUAL SAFETY CAR')) {
             if (status === 'ENDING' || text.includes('ENDING')) {
@@ -862,46 +861,63 @@ function updateTrackStatus(messages) {
             }
             break;
         }
-
-        // Categoria de 'Other' (Normalmente avisos de sanciones, track limits, etc.)
-        if (category === 'Other') {
-            currentStatus = { type: 'other', label: `<img class="fia_msg_img" src="${FIA_logo}">${text}`, class: 'status-other' };
-            break;
-        }
-
-        // Bandera a cuadros
-        if (flag === 'CHEQUERED' || text.includes('CHEQUERED')) {
-            currentStatus = { type: 'chequered', label: `BANDERA A CUADROS`, class: 'status-chequered' };
-            break;
-        }
-
-        // Bandera Roja
-        if (flag === 'RED' || text.includes('RED FLAG')) {
+        // Red Flag
+        if (flag === 'RED') {
             currentStatus = { type: 'red', label: 'BANDERA ROJA - SESIÓN DETENIDA', class: 'status-red' };
             break;
         }
-
-        // Bandera Amarilla
-        if (flag === 'YELLOW' || flag === 'DOUBLE YELLOW' || text.includes('YELLOW')) {
-            const sectorText = msg.Sector ? ` EN SECTOR ${msg.Sector}` : '';
-            currentStatus = { type: 'yellow', label: `BANDERA AMARILLA${sectorText}`, class: 'status-yellow' };
-            break;
-        }
-
-        // Bandera Verde / Fin de peligro
-        if (flag === 'GREEN' || flag === 'CLEAR' || text.includes('CLEAR') || text.includes('GREEN FLAG')) {
-            currentStatus = { type: 'green', label: 'PISTA LIBRE / BANDERA VERDE', class: 'status-green' };
-            break;
+    }
+    // Priority 2: only check secondary states if no high-priority state was found
+    if (!currentStatus) {
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const msg = messages[i];
+            const text = (msg.Message || '').toUpperCase();
+            const flag = (msg.Flag || '').toUpperCase();
+            const category = (msg.Category || '').toUpperCase();
+            if (flag === 'CHEQUERED' || text.includes('CHEQUERED')) {
+                currentStatus = { type: 'chequered', label: 'BANDERA A CUADROS', class: 'status-chequered' };
+                break;
+            }
+            if (flag === 'YELLOW' || flag === 'DOUBLE YELLOW' || text.includes('YELLOW')) {
+                const sectorText = msg.Sector ? ` EN SECTOR ${msg.Sector}` : '';
+                currentStatus = { type: 'yellow', label: `BANDERA AMARILLA${sectorText}`, class: 'status-yellow' };
+                break;
+            }
+            if (flag === 'GREEN' || flag === 'CLEAR' || text.includes('CLEAR') || text.includes('GREEN FLAG')) {
+                currentStatus = { type: 'green', label: 'PISTA LIBRE / BANDERA VERDE', class: 'status-green' };
+                break;
+            }
         }
     }
-
-    // Renderizar en el DOM
+    // Render to DOM
     if (currentStatus) {
         banner.innerHTML = currentStatus.label;
         banner.className = `track-status-banner ${currentStatus.class}`;
         banner.style.display = 'inline-block';
     } else {
         banner.style.display = 'none';
+    }
+
+    // --- FIA messages (sanciones, track limits, etc.) — se muestran en paralelo ---
+    const fiaMsgEl = document.getElementById('fia-msg');
+    if (fiaMsgEl) {
+        let fiaStatus = null;
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const msg = messages[i];
+            const text = (msg.Message || '').toUpperCase();
+            const category = (msg.Category || '').toUpperCase();
+            if (category === 'OTHER') {
+                fiaStatus = { label: `<img class="fia_msg_img" src="${FIA_logo}">${text}`, class: 'status-other' };
+                break;
+            }
+        }
+        if (fiaStatus) {
+            fiaMsgEl.innerHTML = fiaStatus.label;
+            fiaMsgEl.className = `track-status-banner ${fiaStatus.class}`;
+            fiaMsgEl.style.display = 'inline-block';
+        } else {
+            fiaMsgEl.style.display = 'none';
+        }
     }
 }
 
