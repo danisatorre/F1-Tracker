@@ -248,24 +248,24 @@ function renderLeaderboard(data) {
         const position = driver.Position || '-';
         const gridPosition = driver.GridPos || '-';
         const driverRetired = driver.Retired;
-        // Sectores para calsificación
-        const sectors = driver.Sectors || '-';
+        // Sectores (normalizar si viene como Array u Objeto en F1 SignalR)
+        const sectorsObj = driver.Sectors;
+        const sector1 = sectorsObj ? (sectorsObj[0] ?? sectorsObj['0']) : null;
+        const sector2 = sectorsObj ? (sectorsObj[1] ?? sectorsObj['1']) : null;
+        const sector3 = sectorsObj ? (sectorsObj[2] ?? sectorsObj['2']) : null;
         // Sector 1
-        const sector1 = sectors[0];
-        var sector1Time = sector1.Value;
-        var sector1OF = sector1.OverallFastest;
-        var sector1PF = sector1.PersonalFastest;
+        var sector1Time = sector1?.Value;
+        var sector1OF = sector1?.OverallFastest;
+        var sector1PF = sector1?.PersonalFastest;
         // Sector 2
-        const sector2 = sectors[1];
-        var sector2Time = sector2.Value;
-        var sector2OF = sector2.OverallFastest;
-        var sector2PF = sector2.PersonalFastest;
+        var sector2Time = sector2?.Value;
+        var sector2OF = sector2?.OverallFastest;
+        var sector2PF = sector2?.PersonalFastest;
         // Sector 3
-        const sector3 = sectors[2];
-        var sector3Time = sector3.Value;
-        var sector3OF = sector3.OverallFastest;
-        var sector3PF = sector3.PersonalFastest;
-        // console.log(sectors);
+        var sector3Time = sector3?.Value;
+        var sector3OF = sector3?.OverallFastest;
+        var sector3PF = sector3?.PersonalFastest;
+        // console.log(sectorsObj);
         // console.log(sector1);
         // console.log(sector1Time);
         // if (sector1OF) {
