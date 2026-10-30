@@ -393,7 +393,8 @@ function renderLeaderboard(data) {
         }
         // const selectorOptGap = document.querySelector('.selOptGap');
         if (typeSession === 'Race' || typeSession === 'Sprint') {
-            rowsHtml += `
+            if (driver.Position) {
+                rowsHtml += `
                 <tr>
                     <td><strong>${driver.Position || '-'}${difHtml}</strong></td>
                     <td>
@@ -412,8 +413,10 @@ function renderLeaderboard(data) {
                     <td>${driver.InPit ? '🛑 EN BOX' : (driver.NumberOfPitStops || 0)}</td>
                 </tr>
             `;
+            }
         } else if (typeSession === 'Qualifying' || typeSession === 'Practice') {
-            rowsHtml += `
+            if (driver.Position) {
+                rowsHtml += `
                 <tr>
                     <td><strong>${driver.Position || '-'}</strong></td>
                     <td>
@@ -434,6 +437,7 @@ function renderLeaderboard(data) {
                     <td>${driver.InPit ? '🛑 EN BOX' : ' - '}</td>
                 </tr>
             `;
+            }
         }
     });
 
