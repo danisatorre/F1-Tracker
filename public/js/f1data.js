@@ -170,6 +170,7 @@ function renderLeaderboard(data) {
     data.Leaderboard.forEach((racingNumber) => {
         const driver = data.Lines[racingNumber];
         // console.log(data.Lines[racingNumber].RacingNumber);
+        // console.log(driver);
         if (data.Lines[racingNumber].RacingNumber === '_kf') {
             return;
         }
@@ -244,6 +245,7 @@ function renderLeaderboard(data) {
         // }
         const lastLap = driver.LastLapTime?.Value || '-';
         const bestLap = driver.BestLapTime?.Value || '-';
+        // console.log(bestLap);
         const teamColor = driver.TeamColour ? `#${driver.TeamColour}` : '#888';
         const position = driver.Position || '-';
         const gridPosition = driver.GridPos || '-';
@@ -825,7 +827,7 @@ function updateTrackStatus(messages) {
         let category = (msg.Category || '').toUpperCase();
         let status = (msg.Status || '').toUpperCase();
 
-        console.log('msg\n', msg);
+        // console.log('msg\n', msg);
         // console.log('text\n', text);
         // console.log('flag\n', flag);
         // console.log('mode\n', mode);
@@ -868,6 +870,12 @@ function updateTrackStatus(messages) {
         // Red Flag
         if (flag === 'RED') {
             currentStatus = { type: 'red', label: 'BANDERA ROJA - SESIÓN DETENIDA', class: 'status-red' };
+            break;
+        }
+
+        // Cancellation signal: GREEN/CLEAR/CHEQUERED newer than any high-priority state
+        // means the red flag period has ended � stop Pasada 1 and let Pasada 2 decide
+        if (flag === 'GREEN' || flag === 'CLEAR' || flag === 'CHEQUERED') {
             break;
         }
     }
