@@ -243,6 +243,8 @@ function renderLeaderboard(data) {
         // } else if (valueGap === 'interval') {
         //     var gap = driver.IntervalToPositionAhead?.Value || driver.IntervalToPositionAhead || '-';
         // }
+        const retired = driver.Retired;
+        // console.log(retired);
         const lastLap = driver.LastLapTime?.Value || '-';
         const bestLap = driver.BestLapTime?.Value || '-';
         // console.log(bestLap);
@@ -298,6 +300,10 @@ function renderLeaderboard(data) {
         if (sector3Time === '' || sector3Time === undefined) {
             sector3Time = ' - ';
         }
+
+        // if (retired) {
+        //     console.log(`Driver ${driver.BroadcastName} retired`);
+        // }
 
         // Prueba para los colores de los sectores
         // if (racingNumber === '3') {
@@ -397,7 +403,7 @@ function renderLeaderboard(data) {
         if (typeSession === 'Race' || typeSession === 'Sprint') {
             if (driver.Position) {
                 rowsHtml += `
-                <tr>
+                <tr class="${retired ? 'dRetired' : ''}">
                     <td><strong>${driver.Position || '-'}${difHtml}</strong></td>
                     <td>
                     <span class="team-stripe" style="background-color: ${teamColor};"></span>

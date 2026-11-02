@@ -777,3 +777,8 @@ tr:not(:last-child) {
         text-align: center;
     }
 }
+
+.dRetired {
+    background-color: rgba(255, 255, 255, 0.03);
+    opacity: 0.5;
+}
