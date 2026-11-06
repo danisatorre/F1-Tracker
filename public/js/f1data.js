@@ -811,6 +811,7 @@ function updateRadioUI(path, isPlaying) {
 }
 
 // Estado actual de la pista
+
 function updateTrackStatus(messages) {
     const banner = document.getElementById('track-status-banner');
     const FIA_logo = OTHERS_IMG + 'fia_logo.png';
@@ -822,16 +823,59 @@ function updateTrackStatus(messages) {
         return;
     }
 
+    // Ordenar cronológicamente los mensajes independientemente del orden del JSON
+    const sortedMessages = messages
+        .map((msg, index) => ({ msg, index }))
+        .sort((a, b) => {
+            const dateA = Date.parse(a.msg.Utc || '');
+            const dateB = Date.parse(b.msg.Utc || '');
+
+            if (Number.isNaN(dateA) && Number.isNaN(dateB)) return a.index - b.index;
+            if (Number.isNaN(dateA)) return -1;
+            if (Number.isNaN(dateB)) return 1;
+
+            return dateA - dateB || a.index - b.index;
+        })
+        .map(item => item.msg);
+
     // Buscar el último mensaje relevante
     let currentStatus = null;
 
-    for (let i = messages.length - 1; i >= 0; i--) {
-        const msg = messages[i];
+    // Estados de neutralización
+    let activeSC = null;
+    let activeVSC = null;
+    let activeRed = false;
+
+    // Estados de banderas secundarias
+    let activeYellow = new Map();
+    let activeChequered = false;
+    let activeGreen = false;
+
+    for (let i = 0; i < sortedMessages.length; i++) {
+        const msg = sortedMessages[i];
+        // console.table(
+        //     sortedMessages
+        //         .filter(msg =>
+        //             msg.Category === 'Flag' ||
+        //             msg.Category === 'SafetyCar'
+        //         )
+        //         .slice(-30)
+        //         .map(msg => ({
+        //             Utc: msg.Utc,
+        //             Flag: msg.Flag,
+        //             Scope: msg.Scope,
+        //             Sector: msg.Sector,
+        //             Mode: msg.Mode,
+        //             Status: msg.Status,
+        //             Message: msg.Message
+        //         }))
+        // );
         let text = (msg.Message || '').toUpperCase();
         let flag = (msg.Flag || '').toUpperCase();
         let mode = (msg.Mode || '').toUpperCase();
         let category = (msg.Category || '').toUpperCase();
         let status = (msg.Status || '').toUpperCase();
+        let scope = (msg.Scope || '').toUpperCase();
 
         // console.log('msg\n', msg);
         // console.log('text\n', text);
@@ -858,55 +902,224 @@ function updateTrackStatus(messages) {
         // Safety Car (highest priority — stops the scan immediately)
         if ((mode.includes('SAFETY CAR') && !mode.includes('VIRTUAL')) || text.includes('SAFETY CAR DEPLOYED')) {
             if (status === 'IN THIS LAP' || text.includes('IN THIS LAP')) {
-                currentStatus = { type: 'sc-ending', label: `<img class="car_img" src="${carImg}">SAFETY CAR ENTRANDO EN BOX`, class: 'status-sc' };
+                activeSC = 'ending';
             } else {
-                currentStatus = { type: 'sc', label: `<img class="car_img" src="${carImg}">SAFETY CAR (SC)`, class: 'status-sc' };
+                activeSC = 'active';
             }
-            break;
+
+            activeVSC = null;
+            activeRed = false;
+            activeGreen = false;
+            continue;
         }
+
         // Virtual Safety Car
         if (mode.includes('VIRTUAL') || text.includes('VIRTUAL SAFETY CAR')) {
             if (status === 'ENDING' || text.includes('ENDING')) {
-                currentStatus = { type: 'vsc-ending', label: `<img class="car_img" src="${carImg}">VSC TERMINANDO`, class: 'status-vsc' };
+                activeVSC = 'ending';
             } else {
-                currentStatus = { type: 'vsc', label: `<img class="car_img" src="${carImg}">VIRTUAL SAFETY CAR (VSC)`, class: 'status-vsc' };
+                activeVSC = 'active';
             }
-            break;
-        }
-        // Red Flag
-        if (flag === 'RED') {
-            currentStatus = { type: 'red', label: 'BANDERA ROJA - SESIÓN DETENIDA', class: 'status-red' };
-            break;
+
+            activeSC = null;
+            activeRed = false;
+            activeGreen = false;
+            continue;
         }
 
-        // Cancellation signal: GREEN/CLEAR/CHEQUERED newer than any high-priority state
-        // means the red flag period has ended � stop Pasada 1 and let Pasada 2 decide
-        if (flag === 'GREEN' || flag === 'CLEAR' || flag === 'CHEQUERED') {
-            break;
+        // Red Flag
+        if (flag === 'RED' && text.includes('RED FLAG')) {
+            activeRed = true;
+            activeSC = null;
+            activeVSC = null;
+            activeGreen = false;
+            continue;
         }
+
+        // Cancellation signal: GREEN/CLEAR newer than any high-priority state
+        // means the red flag period has ended — only TRACK CLEAR or global GREEN
+        // can cancel a high-priority state. Sector CLEAR messages are ignored.
+
+        const trackClear =
+            (flag === 'CLEAR' && scope === 'TRACK') ||
+            text.includes('TRACK CLEAR');
+
+        const globalGreen =
+            flag === 'GREEN' &&
+            scope !== 'SECTOR' &&
+            (scope === 'TRACK' || text.includes('GREEN FLAG'));
+
+        if (trackClear || globalGreen) {
+            activeSC = null;
+            activeVSC = null;
+            activeRed = false;
+
+            activeYellow.clear();
+
+            // No desactivar CHEQUERED: indica que la sesión ha terminado
+            activeGreen = true;
+
+            continue;
+        }
+
+        // SC ENDING
+        // Se mantiene el estado de SC entrando en boxes hasta recibir una señal global de finalización
+
+        // VSC ENDING
+        // Se mantiene el estado de VSC terminando hasta recibir una señal global de finalización
+
+        // CLEAR IN SECTOR
+        // Eliminar cualquier bandera amarilla activa del sector correspondiente
+        if (flag === 'CLEAR' && scope === 'SECTOR') {
+            const sector = String(msg.Sector || '');
+
+            if (sector) {
+                for (const [key, value] of activeYellow.entries()) {
+                    if (String(value.sector) === sector || key === sector) {
+                        activeYellow.delete(key);
+                    }
+                }
+            }
+
+            // Si no quedan amarillas activas, la pista está libre
+            if (activeYellow.size === 0) {
+                activeGreen = true;
+            }
+
+            continue;
+        }
+
+        // BANDERA AMARILLA / DOBLE AMARILLA
+        if (
+            flag === 'YELLOW' ||
+            flag === 'DOUBLE YELLOW' ||
+            text.includes('YELLOW')
+        ) {
+            const sectorMatch = text.match(/SECTOR\s+(\d+)/);
+
+            const sector = scope === 'SECTOR'
+                ? String(msg.Sector || sectorMatch?.[1] || '')
+                : 'TRACK';
+
+            activeYellow.delete(sector);
+
+            activeYellow.set(sector, {
+                flag: flag === 'DOUBLE YELLOW' || text.includes('DOUBLE YELLOW')
+                    ? 'DOUBLE YELLOW'
+                    : 'YELLOW',
+                sector: sector === 'TRACK' ? null : sector
+            });
+
+            activeGreen = false;
+
+            continue;
+        }
+
+        // CHEQUERED FLAG
+        if (flag === 'CHEQUERED' || text.includes('CHEQUERED')) {
+            activeChequered = true;
+            activeYellow.clear();
+            activeGreen = false;
+
+            continue;
+        }
+
+    } // END FOR
+
+    // console.log('ESTADO FINAL:', {
+    //     activeSC,
+    //     activeVSC,
+    //     activeRed,
+    //     activeYellow: Array.from(activeYellow.entries()),
+    //     activeChequered,
+    //     activeGreen
+    // });
+
+    // Priority 1: high-priority states always override secondary states
+    if (activeSC) {
+        if (activeSC === 'ending') {
+            currentStatus = {
+                type: 'sc-ending',
+                label: `<img class="car_img" src="${carImg}">SAFETY CAR ENTRANDO EN BOX`,
+                class: 'status-sc'
+            };
+        } else {
+            currentStatus = {
+                type: 'sc',
+                label: `<img class="car_img" src="${carImg}">SAFETY CAR (SC)`,
+                class: 'status-sc'
+            };
+        }
+    } else if (activeVSC) {
+        if (activeVSC === 'ending') {
+            currentStatus = {
+                type: 'vsc-ending',
+                label: `<img class="car_img" src="${carImg}">VSC TERMINANDO`,
+                class: 'status-vsc'
+            };
+        } else {
+            currentStatus = {
+                type: 'vsc',
+                label: `<img class="car_img" src="${carImg}">VIRTUAL SAFETY CAR (VSC)`,
+                class: 'status-vsc'
+            };
+        }
+    } else if (activeRed) {
+        currentStatus = {
+            type: 'red',
+            label: 'BANDERA ROJA - SESIÓN DETENIDA',
+            class: 'status-red'
+        };
     }
+
     // Priority 2: only check secondary states if no high-priority state was found
     if (!currentStatus) {
-        for (let i = messages.length - 1; i >= 0; i--) {
-            const msg = messages[i];
-            const text = (msg.Message || '').toUpperCase();
-            const flag = (msg.Flag || '').toUpperCase();
-            const category = (msg.Category || '').toUpperCase();
-            if (flag === 'CHEQUERED' || text.includes('CHEQUERED')) {
-                currentStatus = { type: 'chequered', label: 'BANDERA A CUADROS', class: 'status-chequered' };
-                break;
-            }
-            if (flag === 'YELLOW' || flag === 'DOUBLE YELLOW' || text.includes('YELLOW')) {
-                const sectorText = msg.Sector ? ` EN SECTOR ${msg.Sector}` : '';
-                currentStatus = { type: 'yellow', label: `BANDERA AMARILLA${sectorText}`, class: 'status-yellow' };
-                break;
-            }
-            if (flag === 'GREEN' || flag === 'CLEAR' || text.includes('CLEAR') || text.includes('GREEN FLAG')) {
-                currentStatus = { type: 'green', label: 'PISTA LIBRE / BANDERA VERDE', class: 'status-green' };
-                break;
-            }
+
+        if (activeChequered) {
+            currentStatus = {
+                type: 'chequered',
+                label: 'BANDERA A CUADROS',
+                class: 'status-chequered'
+            };
+
+        } else if (activeYellow.size > 0) {
+            const lastYellow = Array.from(activeYellow.values()).pop();
+
+            const sectorText = lastYellow.sector
+                ? ` EN SECTOR ${lastYellow.sector}`
+                : '';
+
+            currentStatus = {
+                type: 'yellow',
+                label: lastYellow.flag === 'DOUBLE YELLOW'
+                    ? `DOBLE BANDERA AMARILLA${sectorText}`
+                    : `BANDERA AMARILLA${sectorText}`,
+                class: 'status-yellow'
+            };
+
+        } else if (activeGreen) {
+            currentStatus = {
+                type: 'green',
+                label: 'PISTA LIBRE / BANDERA VERDE',
+                class: 'status-green'
+            };
         }
     }
+
+    // console.log(
+    //     'EVENTOS DE FINAL DE SESIÓN:',
+    //     sortedMessages.filter(msg => {
+    //         const text = (msg.Message || '').toUpperCase();
+    //         const flag = (msg.Flag || '').toUpperCase();
+
+    //         return flag === 'CHEQUERED' ||
+    //             text.includes('CHEQUERED') ||
+    //             text.includes('SESSION ENDED') ||
+    //             text.includes('SESSION FINISHED') ||
+    //             text.includes('SESSION COMPLETE');
+    //     })
+    // );
+
     // Render to DOM
     if (currentStatus) {
         banner.innerHTML = currentStatus.label;
@@ -920,8 +1133,8 @@ function updateTrackStatus(messages) {
     const fiaMsgEl = document.getElementById('fia-msg');
     if (fiaMsgEl) {
         let fiaStatus = null;
-        for (let i = messages.length - 1; i >= 0; i--) {
-            const msg = messages[i];
+        for (let i = sortedMessages.length - 1; i >= 0; i--) {
+            const msg = sortedMessages[i];
             const text = (msg.Message || '').toUpperCase();
             const category = (msg.Category || '').toUpperCase();
             if (category === 'OTHER') {
