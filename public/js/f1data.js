@@ -596,14 +596,14 @@ function renderTeamRadios(captures) {
     const today = new Date();
     reversedCaptures.forEach(capture => {
         // No introducir en el DOM las radios que son de otro dia
-        if (capture.Utc) {
-            const radioDate = new Date(capture.Utc);
-            const isSameDay =
-                radioDate.getUTCFullYear() === today.getUTCFullYear() &&
-                radioDate.getUTCMonth() === today.getUTCMonth() &&
-                radioDate.getUTCDate() === today.getUTCDate();
-            if (!isSameDay) return;
-        }
+        // if (capture.Utc) {
+        //     const radioDate = new Date(capture.Utc);
+        //     const isSameDay =
+        //         radioDate.getUTCFullYear() === today.getUTCFullYear() &&
+        //         radioDate.getUTCMonth() === today.getUTCMonth() &&
+        //         radioDate.getUTCDate() === today.getUTCDate();
+        //     if (!isSameDay) return;
+        // }
 
         const path = capture.Path || '';
         const isPlaying = (activeRadioPath === path && activeAudio && !activeAudio.paused);
